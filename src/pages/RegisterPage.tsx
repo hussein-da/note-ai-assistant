@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { MicIcon, Loader2 } from "lucide-react";
+import { MicIcon, Loader2, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const RegisterPage = () => {
   const { signUp, isLoading } = useAuth();
@@ -15,6 +16,7 @@ const RegisterPage = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [signupError, setSignupError] = useState("");
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +32,15 @@ const RegisterPage = () => {
       setPasswordError("");
     }
     
-    await signUp(email, password, name);
+    try {
+      await signUp(email, password, name);
+    } catch (error: any) {
+      if (error.message === "Supabase not configured") {
+        setSignupError("Authentication services are not available. Please connect Supabase to enable registration.");
+      } else {
+        setSignupError(error.message || "Registration failed. Please try again later.");
+      }
+    }
   };
 
   return (
@@ -48,6 +58,12 @@ const RegisterPage = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {signupError && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>{signupError}</AlertDescription>
+            </Alert>
+          )}
           <form onSubmit={handleRegister} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
