@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { MicIcon, User, LogOut, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,40 +11,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Header = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userName, setUserName] = useState("");
+  const { user, signOut } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  useEffect(() => {
-    // This will be replaced with actual Supabase auth check once integrated
-    const checkAuth = () => {
-      setIsAuthenticated(false);
-      setUserName("");
-    };
-    
-    checkAuth();
-  }, []);
-
-  const handleLogout = async () => {
-    try {
-      // This will be replaced with actual Supabase auth once integrated
-      toast({
-        title: "Not implemented yet",
-        description: "Logout functionality will be available after Supabase integration",
-      });
-    } catch (error) {
-      toast({
-        title: "Logout failed",
-        description: "An error occurred during logout",
-        variant: "destructive",
-      });
-    }
-  };
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -69,7 +41,7 @@ const Header = () => {
             Meeting History
           </Link>
           
-          {isAuthenticated ? (
+          {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative rounded-full h-8 w-8 p-0">
@@ -79,13 +51,13 @@ const Header = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>
-                  {userName || "My Account"}
+                  {user.full_name || user.email}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => navigate("/profile")}>
                   Profile
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleLogout}>
+                <DropdownMenuItem onClick={signOut}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>
                 </DropdownMenuItem>
@@ -149,7 +121,7 @@ const Header = () => {
               Upload Meeting
             </Link>
             
-            {isAuthenticated ? (
+            {user ? (
               <>
                 <Link
                   to="/profile"
@@ -161,7 +133,7 @@ const Header = () => {
                 <button
                   className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50"
                   onClick={() => {
-                    handleLogout();
+                    signOut();
                     setIsMobileMenuOpen(false);
                   }}
                 >

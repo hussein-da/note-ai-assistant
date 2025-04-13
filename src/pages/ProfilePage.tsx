@@ -1,123 +1,51 @@
-
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
 import { Loader2, User } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const ProfilePage = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const { user, updateProfile, isLoading } = useAuth();
+  const [name, setName] = useState(user?.full_name || "");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [isPasswordUpdate, setIsPasswordUpdate] = useState(false);
-
-  useEffect(() => {
-    // This will be replaced with actual Supabase auth check once integrated
-    const checkAuth = () => {
-      // Simulate fetching profile data
-      setTimeout(() => {
-        setName("John Doe");
-        setEmail("john.doe@example.com");
-        setIsLoadingProfile(false);
-      }, 500);
-    };
-    
-    checkAuth();
-  }, []);
+  const [passwordError, setPasswordError] = useState("");
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name || !email) {
-      toast({
-        title: "Error",
-        description: "Please fill in all fields",
-        variant: "destructive",
-      });
+    if (!name) {
       return;
     }
     
-    setIsLoading(true);
-    
-    try {
-      // This will be replaced with actual Supabase profile update once integrated
-      setTimeout(() => {
-        toast({
-          title: "Success",
-          description: "Profile updated successfully",
-        });
-        setIsLoading(false);
-      }, 1000);
-    } catch (error) {
-      toast({
-        title: "Update failed",
-        description: "An error occurred. Please try again.",
-        variant: "destructive",
-      });
-      setIsLoading(false);
-    }
+    await updateProfile(name);
   };
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!currentPassword || !newPassword || !confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Please fill in all password fields",
-        variant: "destructive",
-      });
       return;
     }
     
     if (newPassword !== confirmPassword) {
-      toast({
-        title: "Error",
-        description: "New passwords do not match",
-        variant: "destructive",
-      });
+      setPasswordError("New passwords do not match");
       return;
+    } else {
+      setPasswordError("");
     }
     
-    setIsLoading(true);
-    
-    try {
-      // This will be replaced with actual Supabase password update once integrated
-      setTimeout(() => {
-        toast({
-          title: "Success",
-          description: "Password updated successfully",
-        });
-        setCurrentPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
-        setIsLoading(false);
-      }, 1000);
-    } catch (error) {
-      toast({
-        title: "Update failed",
-        description: "An error occurred. Please try again.",
-        variant: "destructive",
-      });
-      setIsLoading(false);
-    }
+    // Note: Password update functionality would be implemented here
+    // It's more complex with Supabase and requires additional setup
+    // This is a placeholder for future implementation
   };
 
-  if (isLoadingProfile) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin h-8 w-8 border-4 border-meeting-primary border-t-transparent rounded-full"></div>
-      </div>
-    );
+  if (!user) {
+    return null; // This should be covered by ProtectedRoute
   }
 
   return (
@@ -174,9 +102,7 @@ const ProfilePage = () => {
                     <Input
                       id="email"
                       type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
+                      value={user.email}
                       disabled
                     />
                     <p className="text-xs text-gray-500">Email address cannot be changed</p>
@@ -222,6 +148,7 @@ const ProfilePage = () => {
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       required
                     />
+                    {passwordError && <p className="text-sm text-red-500">{passwordError}</p>}
                   </div>
                   <Button type="submit" className="bg-meeting-primary hover:bg-meeting-secondary" disabled={isLoading}>
                     {isLoading ? (
@@ -232,6 +159,9 @@ const ProfilePage = () => {
                       "Update Password"
                     )}
                   </Button>
+                  <p className="text-sm text-gray-500 mt-2">
+                    Note: Password change functionality is not fully implemented yet.
+                  </p>
                 </form>
               )}
             </CardContent>

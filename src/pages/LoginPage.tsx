@@ -1,51 +1,21 @@
 
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
 import { MicIcon, Loader2 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const LoginPage = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
+  const { signIn, isLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!email || !password) {
-      toast({
-        title: "Error",
-        description: "Please enter both email and password",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setIsLoading(true);
-    
-    try {
-      // This will be replaced with actual Supabase auth once integrated
-      setTimeout(() => {
-        toast({
-          title: "Not implemented yet",
-          description: "Login functionality will be available after Supabase integration",
-        });
-        setIsLoading(false);
-      }, 1000);
-    } catch (error) {
-      toast({
-        title: "Login failed",
-        description: "Please check your credentials and try again",
-        variant: "destructive",
-      });
-      setIsLoading(false);
-    }
+    await signIn(email, password);
   };
 
   return (

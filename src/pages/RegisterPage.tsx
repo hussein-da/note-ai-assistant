@@ -1,62 +1,36 @@
 
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
 import { MicIcon, Loader2 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const RegisterPage = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
+  const { signUp, isLoading } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!name || !email || !password || !confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Please fill in all fields",
-        variant: "destructive",
-      });
       return;
     }
     
     if (password !== confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Passwords do not match",
-        variant: "destructive",
-      });
+      setPasswordError("Passwords do not match");
       return;
+    } else {
+      setPasswordError("");
     }
     
-    setIsLoading(true);
-    
-    try {
-      // This will be replaced with actual Supabase auth once integrated
-      setTimeout(() => {
-        toast({
-          title: "Not implemented yet",
-          description: "Registration functionality will be available after Supabase integration",
-        });
-        setIsLoading(false);
-      }, 1000);
-    } catch (error) {
-      toast({
-        title: "Registration failed",
-        description: "An error occurred during registration. Please try again.",
-        variant: "destructive",
-      });
-      setIsLoading(false);
-    }
+    await signUp(email, password, name);
   };
 
   return (
@@ -118,6 +92,7 @@ const RegisterPage = () => {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
               />
+              {passwordError && <p className="text-sm text-red-500">{passwordError}</p>}
             </div>
             <Button type="submit" className="w-full bg-meeting-primary hover:bg-meeting-secondary" disabled={isLoading}>
               {isLoading ? (

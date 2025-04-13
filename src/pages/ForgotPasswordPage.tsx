@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
 import { MicIcon, Loader2, ArrowLeft } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { resetPassword } from "@/lib/supabase";
 
 const ForgotPasswordPage = () => {
   const { toast } = useToast();
@@ -14,7 +15,7 @@ const ForgotPasswordPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const handleResetPassword = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!email) {
@@ -29,17 +30,24 @@ const ForgotPasswordPage = () => {
     setIsLoading(true);
     
     try {
-      // This will be replaced with actual Supabase auth once integrated
-      setTimeout(() => {
-        setIsSubmitted(true);
-        setIsLoading(false);
-      }, 1000);
-    } catch (error) {
+      const { error } = await resetPassword(email);
+      
+      if (error) {
+        throw error;
+      }
+      
+      setIsSubmitted(true);
+      toast({
+        title: "Email sent",
+        description: "If an account exists, you'll receive instructions to reset your password",
+      });
+    } catch (error: any) {
       toast({
         title: "Request failed",
-        description: "An error occurred. Please try again.",
+        description: error.message || "An error occurred. Please try again.",
         variant: "destructive",
       });
+    } finally {
       setIsLoading(false);
     }
   };
@@ -53,16 +61,16 @@ const ForgotPasswordPage = () => {
               <MicIcon className="h-6 w-6 text-white" />
             </div>
           </div>
-          <CardTitle className="text-2xl">Reset password</CardTitle>
+          <CardTitle className="text-2xl">Forgot your password?</CardTitle>
           <CardDescription>
-            {!isSubmitted 
-              ? "Enter your email to receive a password reset link" 
-              : "Check your email for a password reset link"}
+            {isSubmitted 
+              ? "We've sent you an email with instructions to reset your password."
+              : "Enter your email address and we'll send you a link to reset your password."}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {!isSubmitted ? (
-            <form onSubmit={handleResetPassword} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -77,34 +85,31 @@ const ForgotPasswordPage = () => {
               <Button type="submit" className="w-full bg-meeting-primary hover:bg-meeting-secondary" disabled={isLoading}>
                 {isLoading ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Please wait
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending email
                   </>
                 ) : (
-                  "Send Reset Link"
+                  "Send reset link"
                 )}
               </Button>
             </form>
           ) : (
-            <div className="text-center space-y-4">
-              <div className="p-4 bg-green-50 text-green-700 rounded-md">
-                Password reset email sent to <strong>{email}</strong>
-              </div>
-              <p className="text-sm text-gray-600">
-                Check your inbox and follow the link to reset your password.
+            <div className="space-y-4 text-center">
+              <p className="text-gray-600">
+                Check your email for the reset link. If you don't see it, check your spam folder.
               </p>
               <Button 
-                variant="outline" 
+                type="button" 
+                className="bg-meeting-primary hover:bg-meeting-secondary"
                 onClick={() => setIsSubmitted(false)}
-                className="mt-2"
               >
-                Try again with a different email
+                Try a different email
               </Button>
             </div>
           )}
         </CardContent>
         <CardFooter className="flex justify-center">
-          <Link to="/login" className="text-sm text-meeting-primary hover:underline flex items-center">
-            <ArrowLeft className="h-4 w-4 mr-1" /> Back to login
+          <Link to="/login" className="flex items-center text-sm text-meeting-primary hover:underline">
+            <ArrowLeft className="mr-1 h-4 w-4" /> Back to login
           </Link>
         </CardFooter>
       </Card>
