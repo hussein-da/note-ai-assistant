@@ -1,6 +1,5 @@
-
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, getCurrentUser, signIn, signOut, signUp, updateProfile } from '@/lib/supabase';
+import { User, getCurrentUser, signIn, signOut, signUp, updateProfile, supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 
@@ -200,6 +199,3 @@ export const useAuth = () => {
   }
   return context;
 };
-
-// Add this import at the top
-import { supabase } from '@/lib/supabase';
