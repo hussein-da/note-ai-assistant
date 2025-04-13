@@ -11,6 +11,12 @@ import MeetingHistoryPage from "@/pages/MeetingHistoryPage";
 import UploadPage from "@/pages/UploadPage";
 import MeetingDetailPage from "@/pages/MeetingDetailPage";
 import NotFoundPage from "@/pages/NotFoundPage";
+import LoginPage from "@/pages/LoginPage";
+import RegisterPage from "@/pages/RegisterPage";
+import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
+import ProfilePage from "@/pages/ProfilePage";
+import PrivacyPolicyPage from "@/pages/PrivacyPolicyPage";
+import TermsOfServicePage from "@/pages/TermsOfServicePage";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +33,12 @@ const App = () => (
             <Route path="/history" element={<MeetingHistoryPage />} />
             <Route path="/upload" element={<UploadPage />} />
             <Route path="/meeting/:id" element={<MeetingDetailPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+            <Route path="/terms-of-service" element={<TermsOfServicePage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
           <Footer />

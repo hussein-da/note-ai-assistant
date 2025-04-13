@@ -10,7 +10,7 @@ const Footer = () => {
             <p className="font-semibold text-gray-700">MeetingBuddy</p>
             <p className="text-sm text-gray-500">Your AI meeting assistant</p>
           </div>
-          <div className="flex gap-6">
+          <div className="flex flex-wrap justify-center gap-6">
             <Link to="/" className="text-sm text-gray-600 hover:text-meeting-primary">
               Home
             </Link>
@@ -19,6 +19,12 @@ const Footer = () => {
             </Link>
             <Link to="/upload" className="text-sm text-gray-600 hover:text-meeting-primary">
               Upload Meeting
+            </Link>
+            <Link to="/terms-of-service" className="text-sm text-gray-600 hover:text-meeting-primary">
+              Terms of Service
+            </Link>
+            <Link to="/privacy-policy" className="text-sm text-gray-600 hover:text-meeting-primary">
+              Privacy Policy
             </Link>
           </div>
           <div className="text-sm text-gray-500">

@@ -1,117 +1,133 @@
 
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Hero from "@/components/Hero";
-import { Clock, CheckCircle, CloudLightning } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Mic, History, ArrowRight } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const HomePage = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // This will be replaced with actual Supabase auth check once integrated
+    const checkAuth = () => {
+      setIsAuthenticated(false);
+      setIsLoading(false);
+    };
+    
+    checkAuth();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin h-8 w-8 border-4 border-meeting-primary border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
+
+  const handleGetStarted = () => {
+    if (isAuthenticated) {
+      navigate("/upload");
+    } else {
+      navigate("/login");
+    }
+  };
+
   return (
     <main className="flex-1">
-      <Hero />
-      
-      {/* Features Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="container max-w-7xl mx-auto px-4">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl font-bold">How MeetingBuddy Works</h2>
-            <p className="mt-4 text-lg text-gray-600">
-              Transform your meeting recordings into actionable insights in three simple steps.
+      <div className="container max-w-7xl mx-auto py-12 px-4">
+        <Hero />
+        
+        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="bg-white p-6 rounded-lg shadow-sm border">
+            <div className="mb-3 bg-meeting-primary/10 w-12 h-12 flex items-center justify-center rounded-full">
+              <Mic className="text-meeting-primary h-6 w-6" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">Upload Meetings</h3>
+            <p className="text-gray-600 mb-4">
+              Upload your meeting recordings and our AI will process them automatically.
             </p>
+            <Button 
+              onClick={() => navigate("/upload")}
+              variant="outline" 
+              className="mt-auto"
+            >
+              Upload Now
+            </Button>
           </div>
           
+          <div className="bg-white p-6 rounded-lg shadow-sm border">
+            <div className="mb-3 bg-meeting-primary/10 w-12 h-12 flex items-center justify-center rounded-full">
+              <History className="text-meeting-primary h-6 w-6" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">Meeting History</h3>
+            <p className="text-gray-600 mb-4">
+              View all your past meetings, summaries, and action items in one place.
+            </p>
+            <Button 
+              onClick={() => navigate("/history")}
+              variant="outline" 
+              className="mt-auto"
+            >
+              View History
+            </Button>
+          </div>
+          
+          <div className="bg-gradient-to-br from-meeting-primary to-meeting-secondary p-6 rounded-lg shadow text-white">
+            <h3 className="text-xl font-semibold mb-3">Get Started Today</h3>
+            <p className="mb-6 opacity-90">
+              Start saving time on your meeting notes and never miss an action item again.
+            </p>
+            <Button 
+              onClick={handleGetStarted}
+              variant="default" 
+              className="bg-white text-meeting-primary hover:bg-gray-100 w-full"
+            >
+              {isAuthenticated ? "Upload a Meeting" : "Create an Account"} <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+        
+        <div className="mt-20">
+          <h2 className="text-2xl font-bold text-center mb-10">How It Works</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 meeting-card">
-              <div className="bg-meeting-primary/10 w-14 h-14 rounded-full flex items-center justify-center mb-4">
-                <CloudLightning className="h-7 w-7 text-meeting-primary" />
+            <div className="text-center">
+              <div className="bg-meeting-primary/10 w-16 h-16 mx-auto flex items-center justify-center rounded-full mb-4">
+                <span className="text-meeting-primary font-bold text-xl">1</span>
               </div>
-              <h3 className="text-xl font-semibold mb-3">Upload Recording</h3>
+              <h3 className="font-semibold mb-2">Upload</h3>
               <p className="text-gray-600">
-                Simply upload your meeting audio file. We support most common formats like MP3, WAV, and M4A.
+                Upload your meeting recording in popular audio formats.
               </p>
             </div>
             
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 meeting-card">
-              <div className="bg-meeting-secondary/10 w-14 h-14 rounded-full flex items-center justify-center mb-4">
-                <Clock className="h-7 w-7 text-meeting-secondary" />
+            <div className="text-center">
+              <div className="bg-meeting-primary/10 w-16 h-16 mx-auto flex items-center justify-center rounded-full mb-4">
+                <span className="text-meeting-primary font-bold text-xl">2</span>
               </div>
-              <h3 className="text-xl font-semibold mb-3">AI Processing</h3>
+              <h3 className="font-semibold mb-2">Process</h3>
               <p className="text-gray-600">
-                Our AI transcribes the audio and analyzes the content to identify key points and action items.
+                Our AI transcribes and analyzes your meeting content.
               </p>
             </div>
             
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 meeting-card">
-              <div className="bg-meeting-accent/10 w-14 h-14 rounded-full flex items-center justify-center mb-4">
-                <CheckCircle className="h-7 w-7 text-meeting-accent" />
+            <div className="text-center">
+              <div className="bg-meeting-primary/10 w-16 h-16 mx-auto flex items-center justify-center rounded-full mb-4">
+                <span className="text-meeting-primary font-bold text-xl">3</span>
               </div>
-              <h3 className="text-xl font-semibold mb-3">Get Results</h3>
+              <h3 className="font-semibold mb-2">Review</h3>
               <p className="text-gray-600">
-                Review your meeting transcript, summary, and action items. Export or share with your team.
+                Get a transcript, summary, and action items from your meeting.
               </p>
             </div>
           </div>
         </div>
-      </section>
-      
-      {/* Benefits Section */}
-      <section className="py-16">
-        <div className="container max-w-7xl mx-auto px-4">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl font-bold">Why Use MeetingBuddy?</h2>
-            <p className="mt-4 text-lg text-gray-600">
-              Save time and never miss important details from your meetings again.
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="flex gap-4">
-              <div className="bg-meeting-primary/10 h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-meeting-primary font-bold">1</span>
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold mb-2">Save Time</h3>
-                <p className="text-gray-600">
-                  No more manual note-taking or spending hours reviewing recordings. Get comprehensive meeting summaries in minutes.
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex gap-4">
-              <div className="bg-meeting-primary/10 h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-meeting-primary font-bold">2</span>
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold mb-2">Capture Every Detail</h3>
-                <p className="text-gray-600">
-                  Ensure no important information or action items are missed with accurate transcription and AI analysis.
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex gap-4">
-              <div className="bg-meeting-primary/10 h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-meeting-primary font-bold">3</span>
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold mb-2">Focus on Participation</h3>
-                <p className="text-gray-600">
-                  Be fully present in your meetings without worrying about taking notes. MeetingBuddy has you covered.
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex gap-4">
-              <div className="bg-meeting-primary/10 h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-meeting-primary font-bold">4</span>
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold mb-2">Track Action Items</h3>
-                <p className="text-gray-600">
-                  Automatically extract and organize action items with assigned owners and due dates.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      </div>
     </main>
   );
 };
