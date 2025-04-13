@@ -1,5 +1,5 @@
 
-import { CircleNotch, Clock } from "lucide-react";
+import { CircleDot, Clock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
 interface ProcessingIndicatorProps {
@@ -11,7 +11,7 @@ const ProcessingIndicator: React.FC<ProcessingIndicatorProps> = ({ title }) => {
     <Card className="max-w-md mx-auto my-12">
       <CardContent className="pt-6 text-center">
         <div className="flex justify-center">
-          <CircleNotch className="h-10 w-10 text-meeting-primary animate-spin" />
+          <CircleDot className="h-10 w-10 text-meeting-primary animate-spin" />
         </div>
         <h2 className="text-xl font-semibold mt-4">{title}</h2>
         <p className="text-gray-500 mt-2">
