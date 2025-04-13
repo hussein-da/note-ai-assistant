@@ -6,12 +6,52 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Ensure variables are defined
+// Create a placeholder client for when the environment variables aren't available
+// This helps prevent immediate crashes during development
+let supabase;
+
+// Check if Supabase is properly configured
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables. Please ensure your Supabase project is properly connected.');
+  console.warn('Supabase environment variables are missing. Authentication features will not work until you connect your Supabase project.');
+  // Create a mock client that will log warnings instead of throwing errors
+  supabase = {
+    auth: {
+      signUp: () => {
+        console.warn('Supabase is not configured. Please connect your Supabase project to enable authentication.');
+        return { data: null, error: new Error('Supabase not configured') };
+      },
+      signInWithPassword: () => {
+        console.warn('Supabase is not configured. Please connect your Supabase project to enable authentication.');
+        return { data: null, error: new Error('Supabase not configured') };
+      },
+      signOut: () => {
+        console.warn('Supabase is not configured. Please connect your Supabase project to enable authentication.');
+        return { error: new Error('Supabase not configured') };
+      },
+      getUser: () => {
+        console.warn('Supabase is not configured. Please connect your Supabase project to enable authentication.');
+        return { data: null, error: new Error('Supabase not configured') };
+      },
+      updateUser: () => {
+        console.warn('Supabase is not configured. Please connect your Supabase project to enable authentication.');
+        return { data: null, error: new Error('Supabase not configured') };
+      },
+      resetPasswordForEmail: () => {
+        console.warn('Supabase is not configured. Please connect your Supabase project to enable authentication.');
+        return { data: null, error: new Error('Supabase not configured') };
+      },
+      onAuthStateChange: () => {
+        console.warn('Supabase is not configured. Please connect your Supabase project to enable authentication.');
+        return { data: { subscription: { unsubscribe: () => {} } }, error: null };
+      }
+    }
+  };
+} else {
+  // Create the real Supabase client
+  supabase = createClient(supabaseUrl, supabaseAnonKey);
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export { supabase };
 
 // Helper Types for better TypeScript support
 export type User = {
