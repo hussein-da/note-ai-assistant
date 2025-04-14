@@ -120,6 +120,31 @@ const MeetingDetailPage = () => {
     );
   }
 
+  if (meeting.status === 'failed') {
+    return (
+      <main className="flex-1 container max-w-7xl mx-auto py-10 px-4">
+        <Button asChild variant="outline" className="mb-6">
+          <Link to="/history">
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Meeting History
+          </Link>
+        </Button>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-2xl mx-auto">
+          <h2 className="text-xl font-semibold text-red-700 mb-2">Processing Failed</h2>
+          <p className="text-gray-600 mb-4">{meeting.error_message || 'An error occurred while processing the meeting recording.'}</p>
+          {meeting.error_message?.includes('OpenAI API key not configured') && (
+            <div className="bg-white p-4 rounded border border-red-100 text-sm">
+              <p className="font-medium text-gray-900 mb-2">Administrator Action Required:</p>
+              <p className="text-gray-600">
+                This application requires an OpenAI API key to process meeting recordings. 
+                Please configure the OPENAI_API_KEY in your Supabase project settings.
+              </p>
+            </div>
+          )}
+        </div>
+      </main>
+    );
+  }
+
   if (meeting.status === 'processing') {
     return (
       <main className="flex-1 container max-w-7xl mx-auto py-10 px-4">

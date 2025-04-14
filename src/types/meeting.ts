@@ -7,6 +7,7 @@ export interface Meeting {
   status: 'processing' | 'completed' | 'failed';
   transcript?: string;
   summary?: string;
+  error_message?: string;
   actionItems?: ActionItem[];
   audioUrl?: string;
 }

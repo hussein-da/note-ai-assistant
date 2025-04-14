@@ -19,11 +19,22 @@ serve(async (req) => {
       throw new Error('Meeting ID and audio URL are required')
     }
 
-    // 1. Audio-Datei von Supabase Storage herunterladen
+    // Check if OpenAI API key is configured
+    const openaiKey = Deno.env.get('OPENAI_API_KEY')
+    if (!openaiKey) {
+      // Update meeting status to failed if no API key is available
+      await updateMeetingStatus(meetingId, 'failed', 'OpenAI API key not configured')
+      throw new Error('OpenAI API key not configured')
+    }
+
+    // 1. Download audio file from Supabase Storage
     const response = await fetch(audioUrl)
+    if (!response.ok) {
+      throw new Error('Failed to download audio file')
+    }
     const audioBlob = await response.blob()
 
-    // 2. Audio mit Whisper transkribieren
+    // 2. Transcribe audio with Whisper
     const formData = new FormData()
     formData.append('file', audioBlob, 'audio.mp3')
     formData.append('model', 'whisper-1')
@@ -31,22 +42,24 @@ serve(async (req) => {
     const whisperResponse = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Authorization': `Bearer ${openaiKey}`,
       },
       body: formData,
     })
 
     if (!whisperResponse.ok) {
-      throw new Error(`Whisper API error: ${await whisperResponse.text()}`)
+      const error = await whisperResponse.text()
+      await updateMeetingStatus(meetingId, 'failed', `Transcription failed: ${error}`)
+      throw new Error(`Whisper API error: ${error}`)
     }
 
     const { text: transcript } = await whisperResponse.json()
 
-    // 3. GPT für die Zusammenfassung verwenden
+    // 3. Generate summary with GPT
     const summaryResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Authorization': `Bearer ${openaiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -54,7 +67,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'Du bist ein Assistent, der Meetings zusammenfasst. Erstelle eine kurze, prägnante Zusammenfassung der wichtigsten Punkte.'
+            content: 'Du bist ein Assistent, der Meetings zusammenfasst. Erstelle eine klare, strukturierte Zusammenfassung der wichtigsten Punkte.'
           },
           {
             role: 'user',
@@ -65,33 +78,16 @@ serve(async (req) => {
     })
 
     if (!summaryResponse.ok) {
-      throw new Error(`GPT API error: ${await summaryResponse.text()}`)
+      const error = await summaryResponse.text()
+      await updateMeetingStatus(meetingId, 'failed', `Summarization failed: ${error}`)
+      throw new Error(`GPT API error: ${error}`)
     }
 
     const { choices } = await summaryResponse.json()
     const summary = choices[0].message.content
 
-    // 4. Meeting in der Datenbank aktualisieren
-    const { error: updateError } = await fetch(
-      `https://afthfaddlxvqdvrhnaiu.supabase.co/rest/v1/meetings?id=eq.${meetingId}`,
-      {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=minimal',
-        },
-        body: JSON.stringify({
-          status: 'completed',
-          transcript,
-          summary,
-        }),
-      }
-    )
-
-    if (updateError) {
-      throw updateError
-    }
+    // 4. Update meeting in database
+    await updateMeetingStatus(meetingId, 'completed', null, transcript, summary)
 
     return new Response(
       JSON.stringify({ success: true }),
@@ -109,3 +105,32 @@ serve(async (req) => {
     )
   }
 })
+
+// Helper function to update meeting status
+async function updateMeetingStatus(
+  meetingId: string, 
+  status: 'completed' | 'failed', 
+  error?: string | null,
+  transcript?: string,
+  summary?: string
+) {
+  const updateData: any = {
+    status,
+    ...(error && { error_message: error }),
+    ...(transcript && { transcript }),
+    ...(summary && { summary }),
+  }
+
+  await fetch(
+    `https://afthfaddlxvqdvrhnaiu.supabase.co/rest/v1/meetings?id=eq.${meetingId}`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal',
+      },
+      body: JSON.stringify(updateData),
+    }
+  )
+}
