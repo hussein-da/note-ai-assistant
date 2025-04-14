@@ -1,3 +1,4 @@
+
 # Meeting Transcription App
 
 This AI-powered application transcribes and analyzes meetings using advanced language models.
@@ -112,3 +113,4 @@ npm run dev
 - Application displays appropriate error message if no OpenAI API key is configured
 - Processing errors are shown in meeting status
 - Check Edge Function logs in Supabase for detailed error information
+
