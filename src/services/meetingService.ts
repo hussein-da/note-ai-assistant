@@ -186,7 +186,7 @@ export const createMeeting = async (meetingData: MeetingFormData): Promise<Meeti
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY}`,
+          'Authorization': `Bearer ${supabase.supabaseKey}`,
         },
         body: JSON.stringify({
           meetingId: meeting.id,

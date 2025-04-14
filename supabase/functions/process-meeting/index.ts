@@ -48,6 +48,10 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured')
     }
 
+    // Mark the meeting as processing in the database
+    console.log("Marking meeting as processing");
+    await updateMeetingStatus(meetingId, 'processing', null);
+
     // 1. Download audio file from Supabase Storage
     console.log("Downloading audio file");
     try {
@@ -73,6 +77,8 @@ serve(async (req) => {
       const formData = new FormData()
       formData.append('file', audioBlob, 'audio.mp3')
       formData.append('model', 'whisper-1')
+      formData.append('response_format', 'json')
+      formData.append('language', 'de')
 
       const whisperResponse = await fetch('https://api.openai.com/v1/audio/transcriptions', {
         method: 'POST',
@@ -102,11 +108,11 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4',
+          model: 'gpt-4o-mini',
           messages: [
             {
               role: 'system',
-              content: 'You are an assistant that summarizes meetings. Create a clear, structured summary of the key points. Always provide the summary in English, regardless of the input language.'
+              content: 'You are an assistant that summarizes meetings. Create a clear, structured summary of the key points and extract action items with assignees if present. Format your response with the summary first, followed by a list of action items if any are mentioned in the meeting.'
             },
             {
               role: 'user',
@@ -126,6 +132,59 @@ serve(async (req) => {
       const { choices } = await summaryResponse.json();
       const summary = choices[0].message.content;
       console.log("Summary generated successfully, length:", summary.length);
+
+      // Extract action items from the summary
+      console.log("Extracting action items");
+      const actionItemsResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openaiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: 'Extract action items from the meeting transcript. Return a JSON array of objects with fields: "text" (the action item description), "assignee" (name of person assigned, or null), "dueDate" (deadline if mentioned, or null). If no action items are found, return an empty array [].'
+            },
+            {
+              role: 'user',
+              content: transcript
+            }
+          ],
+          response_format: { type: "json_object" }
+        }),
+      });
+
+      if (!actionItemsResponse.ok) {
+        console.error("Failed to extract action items, continuing without them");
+        // Continue without action items
+      } else {
+        const actionItemsData = await actionItemsResponse.json();
+        const actionItemsContent = actionItemsData.choices[0].message.content;
+        console.log("Action items extracted:", actionItemsContent);
+        
+        try {
+          const actionItems = JSON.parse(actionItemsContent).items || [];
+          
+          if (actionItems.length > 0) {
+            console.log(`Adding ${actionItems.length} action items to database`);
+            
+            for (const item of actionItems) {
+              await addActionItem(
+                meetingId, 
+                item.text, 
+                item.assignee || null, 
+                item.dueDate || null
+              );
+            }
+          }
+        } catch (parseError) {
+          console.error("Error parsing action items:", parseError);
+          // Continue without action items
+        }
+      }
 
       // 4. Update meeting in database
       console.log("Updating meeting status to completed");
@@ -155,7 +214,7 @@ serve(async (req) => {
 // Helper function to update meeting status
 async function updateMeetingStatus(
   meetingId: string, 
-  status: 'completed' | 'failed', 
+  status: 'processing' | 'completed' | 'failed', 
   error?: string | null,
   transcript?: string,
   summary?: string
@@ -191,5 +250,45 @@ async function updateMeetingStatus(
     }
   } catch (updateError) {
     console.error(`Error updating meeting status:`, updateError);
+  }
+}
+
+// Helper function to add action item
+async function addActionItem(
+  meetingId: string,
+  text: string,
+  assignee?: string | null,
+  dueDate?: string | null
+) {
+  console.log(`Adding action item to meeting ${meetingId}: ${text}`);
+  
+  try {
+    const response = await fetch(
+      `https://afthfaddlxvqdvrhnaiu.supabase.co/rest/v1/action_items`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal',
+        },
+        body: JSON.stringify({
+          meeting_id: meetingId,
+          text,
+          assignee,
+          due_date: dueDate,
+          completed: false
+        }),
+      }
+    );
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Failed to add action item: ${response.status} ${errorText}`);
+    } else {
+      console.log(`Action item added successfully`);
+    }
+  } catch (error) {
+    console.error(`Error adding action item:`, error);
   }
 }
