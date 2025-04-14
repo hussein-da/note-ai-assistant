@@ -9,6 +9,83 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      action_items: {
+        Row: {
+          assignee: string | null
+          completed: boolean
+          created_at: string
+          due_date: string | null
+          id: string
+          meeting_id: string
+          text: string
+        }
+        Insert: {
+          assignee?: string | null
+          completed?: boolean
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          meeting_id: string
+          text: string
+        }
+        Update: {
+          assignee?: string | null
+          completed?: boolean
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          meeting_id?: string
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "action_items_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meetings: {
+        Row: {
+          audio_path: string | null
+          created_at: string
+          date: string
+          duration: string
+          id: string
+          status: string
+          summary: string | null
+          title: string
+          transcript: string | null
+          user_id: string
+        }
+        Insert: {
+          audio_path?: string | null
+          created_at?: string
+          date?: string
+          duration?: string
+          id?: string
+          status?: string
+          summary?: string | null
+          title: string
+          transcript?: string | null
+          user_id: string
+        }
+        Update: {
+          audio_path?: string | null
+          created_at?: string
+          date?: string
+          duration?: string
+          id?: string
+          status?: string
+          summary?: string | null
+          title?: string
+          transcript?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
