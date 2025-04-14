@@ -182,11 +182,15 @@ export const createMeeting = async (meetingData: MeetingFormData): Promise<Meeti
 
     // Start processing with the Edge Function
     try {
+      // Get the authentication token from the current session
+      const { data: { session } } = await supabase.auth.getSession();
+      const authToken = session?.access_token || '';
+
       const response = await fetch('https://afthfaddlxvqdvrhnaiu.functions.supabase.co/process-meeting', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabase.supabaseKey}`,
+          'Authorization': `Bearer ${authToken}`,
         },
         body: JSON.stringify({
           meetingId: meeting.id,
