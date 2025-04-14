@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
 
@@ -63,11 +62,11 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4',
         messages: [
           {
             role: 'system',
-            content: 'Du bist ein Assistent, der Meetings zusammenfasst. Erstelle eine klare, strukturierte Zusammenfassung der wichtigsten Punkte.'
+            content: 'You are an assistant that summarizes meetings. Create a clear, structured summary of the key points. Always provide the summary in English, regardless of the input language.'
           },
           {
             role: 'user',

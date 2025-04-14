@@ -1,5 +1,6 @@
 
 import { Link } from "react-router-dom";
+import { Github } from "lucide-react";
 
 const Footer = () => {
   return (
@@ -27,8 +28,25 @@ const Footer = () => {
               Privacy Policy
             </Link>
           </div>
-          <div className="text-sm text-gray-500">
-            © {new Date().getFullYear()} MeetingBuddy
+          <div className="flex flex-col items-center gap-2">
+            <div className="text-sm text-gray-500">
+              © {new Date().getFullYear()} MeetingBuddy
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <span>Created by Hussein Daoud</span>
+              <a 
+                href="https://github.com/hussein-da" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-gray-600 hover:text-meeting-primary"
+              >
+                <Github className="h-4 w-4" />
+                <span>GitHub</span>
+              </a>
+            </div>
+            <div className="text-xs text-gray-500 text-center mt-1">
+              This is a personal project. For collaboration inquiries, please reach out via GitHub.
+            </div>
           </div>
         </div>
       </div>

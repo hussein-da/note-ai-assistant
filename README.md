@@ -1,25 +1,31 @@
-
 # Meeting Transcription App
 
-Diese Anwendung transkribiert und analysiert Meetings mit Hilfe von KI.
+This AI-powered application transcribes and analyzes meetings using advanced language models.
 
-## Setup für Entwickler
+## Project Information
 
-### 1. Repository klonen
+**Author:** Hussein Daoud  
+**GitHub:** [hussein-da](https://github.com/hussein-da)
+
+> This project is a hobby/personal project and is not intended for commercial use. However, I'm open to collaboration and discussions about scaling and deployment opportunities. Feel free to contact me through GitHub for any inquiries!
+
+## Setup for Developers
+
+### 1. Clone Repository
 ```bash
 git clone <your-repo-url>
 cd <repo-name>
 ```
 
-### 2. Supabase Projekt einrichten
-1. Erstellen Sie ein neues [Supabase Projekt](https://supabase.com)
-2. Gehen Sie zu den Projekteinstellungen > Functions
-3. Fügen Sie den OpenAI API-Key als Secret hinzu:
+### 2. Set up Supabase Project
+1. Create a new [Supabase Project](https://supabase.com)
+2. Go to Project Settings > Functions
+3. Add OpenAI API Key as a secret:
    - Name: `OPENAI_API_KEY`
-   - Value: Ihr OpenAI API-Key von [OpenAI API Keys](https://platform.openai.com/api-keys)
+   - Value: Your OpenAI API Key from [OpenAI API Keys](https://platform.openai.com/api-keys)
 
-### 3. Datenbank-Migration
-Führen Sie die folgenden SQL-Befehle in der Supabase SQL Editor aus:
+### 3. Database Migration
+Execute the following SQL commands in the Supabase SQL Editor:
 
 ```sql
 -- Erstellen der meetings Tabelle
@@ -83,27 +89,26 @@ WITH CHECK (
 );
 ```
 
-### 4. Anwendung starten
+### 4. Start Application
 ```bash
 npm install
 npm run dev
 ```
 
 ## Features
-- Audio-Upload von Meetings
-- Automatische Transkription mit OpenAI Whisper
-- KI-gestützte Zusammenfassung mit GPT
-- Extraktion von Action Items
-- Echtzeit-Status-Updates
+- Meeting audio upload
+- Automatic transcription using OpenAI Whisper
+- AI-powered summarization with GPT
+- Action item extraction
+- Real-time status updates
 
-## Technischer Stack
+## Tech Stack
 - React + TypeScript
-- Supabase für Backend und Authentifizierung
-- OpenAI API für Transkription und Analyse
-- TailwindCSS für Styling
+- Supabase for backend and authentication
+- OpenAI API for transcription and analysis
+- TailwindCSS for styling
 
-## Fehlerbehandlung
-- Wenn kein OpenAI API-Key konfiguriert ist, zeigt die Anwendung eine entsprechende Fehlermeldung
-- Fehler bei der Verarbeitung werden im Meeting-Status angezeigt
-- Überprüfen Sie die Edge Function Logs in Supabase für detaillierte Fehlerinformationen
-
+## Error Handling
+- Application displays appropriate error message if no OpenAI API key is configured
+- Processing errors are shown in meeting status
+- Check Edge Function logs in Supabase for detailed error information
