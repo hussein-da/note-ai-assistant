@@ -24,9 +24,17 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 // Alle Meetings abrufen
 export const getMeetings = async (): Promise<Meeting[]> => {
   try {
+    // Aktuellen Benutzer abrufen
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user) {
+      console.error('Kein Benutzer angemeldet');
+      return [];
+    }
+
     const { data: meetingsData, error: meetingsError } = await supabase
       .from('meetings')
       .select('*')
+      .eq('user_id', userData.user.id)
       .order('date', { ascending: false });
 
     if (meetingsError) throw meetingsError;
@@ -99,14 +107,21 @@ export const getMeetingById = async (id: string): Promise<Meeting | undefined> =
 // Ein neues Meeting erstellen
 export const createMeeting = async (meetingData: MeetingFormData): Promise<Meeting> => {
   try {
+    // Aktuellen Benutzer abrufen
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user) {
+      throw new Error('Kein Benutzer angemeldet');
+    }
+
     // Erstelle ein neues Meeting in der Datenbank
     const { data: newMeeting, error } = await supabase
       .from('meetings')
-      .insert([{
+      .insert({
         title: meetingData.title,
         status: 'processing',
+        user_id: userData.user.id,
         // Weitere Felder werden mit Standardwerten gefüllt
-      }])
+      })
       .select()
       .single();
 
