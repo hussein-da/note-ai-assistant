@@ -21,9 +21,9 @@ const LoginPage = () => {
       await signIn(email, password);
     } catch (error: any) {
       if (error?.message === "Supabase not configured") {
-        setLoginError("Authentication services are not available. Please connect Supabase to enable login.");
+        setLoginError("Authentifizierungsdienste sind nicht verfügbar. Bitte verbinde Supabase, um die Anmeldung zu ermöglichen.");
       } else {
-        setLoginError(error?.message || "Login failed. Please check your credentials and try again.");
+        setLoginError(error?.message || "Anmeldung fehlgeschlagen. Bitte überprüfe deine Zugangsdaten und versuche es erneut.");
       }
     }
   };
@@ -37,9 +37,9 @@ const LoginPage = () => {
               <MicIcon className="h-6 w-6 text-white" />
             </div>
           </div>
-          <CardTitle className="text-2xl">Welcome back</CardTitle>
+          <CardTitle className="text-2xl">Willkommen zurück</CardTitle>
           <CardDescription>
-            Sign in to your MeetingBuddy account
+            Melde dich bei deinem MeetingBuddy-Konto an
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -51,11 +51,11 @@ const LoginPage = () => {
           )}
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">E-Mail</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="name@example.com"
+                placeholder="name@beispiel.de"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -63,9 +63,9 @@ const LoginPage = () => {
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">Passwort</Label>
                 <Link to="/forgot-password" className="text-sm text-meeting-primary hover:underline">
-                  Forgot password?
+                  Passwort vergessen?
                 </Link>
               </div>
               <Input
@@ -80,19 +80,19 @@ const LoginPage = () => {
             <Button type="submit" className="w-full bg-meeting-primary hover:bg-meeting-secondary" disabled={isLoading}>
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Please wait
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Bitte warten
                 </>
               ) : (
-                "Sign In"
+                "Anmelden"
               )}
             </Button>
           </form>
         </CardContent>
         <CardFooter className="flex justify-center">
           <p className="text-sm text-gray-600">
-            Don't have an account?{" "}
+            Noch kein Konto?{" "}
             <Link to="/register" className="text-meeting-primary hover:underline">
-              Sign up
+              Registrieren
             </Link>
           </p>
         </CardFooter>

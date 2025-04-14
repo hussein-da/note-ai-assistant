@@ -26,7 +26,7 @@ const RegisterPage = () => {
     }
     
     if (password !== confirmPassword) {
-      setPasswordError("Passwords do not match");
+      setPasswordError("Passwörter stimmen nicht überein");
       return;
     } else {
       setPasswordError("");
@@ -36,9 +36,9 @@ const RegisterPage = () => {
       await signUp(email, password, name);
     } catch (error: any) {
       if (error.message === "Supabase not configured") {
-        setSignupError("Authentication services are not available. Please connect Supabase to enable registration.");
+        setSignupError("Authentifizierungsdienste sind nicht verfügbar. Bitte verbinde Supabase, um die Registrierung zu ermöglichen.");
       } else {
-        setSignupError(error.message || "Registration failed. Please try again later.");
+        setSignupError(error.message || "Registrierung fehlgeschlagen. Bitte versuche es später erneut.");
       }
     }
   };
@@ -52,9 +52,9 @@ const RegisterPage = () => {
               <MicIcon className="h-6 w-6 text-white" />
             </div>
           </div>
-          <CardTitle className="text-2xl">Create an account</CardTitle>
+          <CardTitle className="text-2xl">Konto erstellen</CardTitle>
           <CardDescription>
-            Join MeetingBuddy and start saving time on your meetings
+            Tritt MeetingBuddy bei und spare Zeit bei deinen Meetings
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -66,29 +66,29 @@ const RegisterPage = () => {
           )}
           <form onSubmit={handleRegister} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
+              <Label htmlFor="name">Vollständiger Name</Label>
               <Input
                 id="name"
                 type="text"
-                placeholder="John Doe"
+                placeholder="Max Mustermann"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">E-Mail</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="name@example.com"
+                placeholder="name@beispiel.de"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Passwort</Label>
               <Input
                 id="password"
                 type="password"
@@ -99,7 +99,7 @@ const RegisterPage = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Label htmlFor="confirmPassword">Passwort bestätigen</Label>
               <Input
                 id="confirmPassword"
                 type="password"
@@ -113,19 +113,19 @@ const RegisterPage = () => {
             <Button type="submit" className="w-full bg-meeting-primary hover:bg-meeting-secondary" disabled={isLoading}>
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating account
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Konto wird erstellt
                 </>
               ) : (
-                "Sign Up"
+                "Registrieren"
               )}
             </Button>
           </form>
         </CardContent>
         <CardFooter className="flex justify-center">
           <p className="text-sm text-gray-600">
-            Already have an account?{" "}
+            Bereits ein Konto?{" "}
             <Link to="/login" className="text-meeting-primary hover:underline">
-              Sign in
+              Anmelden
             </Link>
           </p>
         </CardFooter>

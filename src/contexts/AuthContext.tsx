@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, getCurrentUser, signIn, signOut, signUp, updateProfile, supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
@@ -21,6 +22,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        setUser({
+          id: session.user.id,
+          email: session.user.email || '',
+          full_name: session.user.user_metadata?.full_name,
+        });
+      } else {
+        setUser(null);
+      }
+    });
+
+    // THEN check for existing session
     const fetchUser = async () => {
       try {
         const { user, error } = await getCurrentUser();
@@ -44,23 +59,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     fetchUser();
 
-    // Listen for auth state changes
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        setUser({
-          id: session.user.id,
-          email: session.user.email || '',
-          full_name: session.user.user_metadata?.full_name,
-        });
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null);
-      }
-    });
-
     return () => {
-      if (authListener?.subscription) {
-        authListener.subscription.unsubscribe();
-      }
+      subscription.unsubscribe();
     };
   }, []);
 
@@ -74,15 +74,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       toast({
-        title: "Registration successful",
-        description: "Please check your email to confirm your account.",
+        title: "Registrierung erfolgreich",
+        description: "Bitte überprüfe deine E-Mails, um dein Konto zu bestätigen.",
       });
       
       navigate('/login');
     } catch (error: any) {
       toast({
-        title: "Registration failed",
-        description: error.message || "An error occurred during registration",
+        title: "Registrierung fehlgeschlagen",
+        description: error.message || "Bei der Registrierung ist ein Fehler aufgetreten",
         variant: "destructive",
       });
     } finally {
@@ -107,16 +107,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         });
         
         toast({
-          title: "Login successful",
-          description: `Welcome back${data.user.user_metadata?.full_name ? ', ' + data.user.user_metadata.full_name : ''}!`,
+          title: "Login erfolgreich",
+          description: `Willkommen zurück${data.user.user_metadata?.full_name ? ', ' + data.user.user_metadata.full_name : ''}!`,
         });
         
         navigate('/');
       }
     } catch (error: any) {
       toast({
-        title: "Login failed",
-        description: error.message || "Please check your credentials and try again",
+        title: "Login fehlgeschlagen",
+        description: error.message || "Bitte überprüfe deine Zugangsdaten und versuche es erneut",
         variant: "destructive",
       });
     } finally {
@@ -134,15 +134,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       setUser(null);
       toast({
-        title: "Logged out",
-        description: "You have been successfully logged out",
+        title: "Abgemeldet",
+        description: "Du wurdest erfolgreich abgemeldet",
       });
       
       navigate('/login');
     } catch (error: any) {
       toast({
-        title: "Logout failed",
-        description: error.message || "An error occurred during logout",
+        title: "Abmeldung fehlgeschlagen",
+        description: error.message || "Bei der Abmeldung ist ein Fehler aufgetreten",
         variant: "destructive",
       });
     }
@@ -166,13 +166,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       toast({
-        title: "Profile updated",
-        description: "Your profile has been successfully updated",
+        title: "Profil aktualisiert",
+        description: "Dein Profil wurde erfolgreich aktualisiert",
       });
     } catch (error: any) {
       toast({
-        title: "Update failed",
-        description: error.message || "An error occurred updating your profile",
+        title: "Aktualisierung fehlgeschlagen",
+        description: error.message || "Bei der Aktualisierung deines Profils ist ein Fehler aufgetreten",
         variant: "destructive",
       });
     } finally {
