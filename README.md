@@ -1,73 +1,109 @@
-# Welcome to your Lovable project
 
-## Project info
+# Meeting Transcription App
 
-**URL**: https://lovable.dev/projects/49e1a544-2d3c-4196-823c-bbd5e451341e
+Diese Anwendung transkribiert und analysiert Meetings mit Hilfe von KI.
 
-## How can I edit this code?
+## Setup für Entwickler
 
-There are several ways of editing your application.
+### 1. Repository klonen
+```bash
+git clone <your-repo-url>
+cd <repo-name>
+```
 
-**Use Lovable**
+### 2. Supabase Projekt einrichten
+1. Erstellen Sie ein neues [Supabase Projekt](https://supabase.com)
+2. Gehen Sie zu den Projekteinstellungen > Functions
+3. Fügen Sie den OpenAI API-Key als Secret hinzu:
+   - Name: `OPENAI_API_KEY`
+   - Value: Ihr OpenAI API-Key von [OpenAI API Keys](https://platform.openai.com/api-keys)
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/49e1a544-2d3c-4196-823c-bbd5e451341e) and start prompting.
+### 3. Datenbank-Migration
+Führen Sie die folgenden SQL-Befehle in der Supabase SQL Editor aus:
 
-Changes made via Lovable will be committed automatically to this repo.
+```sql
+-- Erstellen der meetings Tabelle
+CREATE TABLE IF NOT EXISTS public.meetings (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    title TEXT NOT NULL,
+    audio_path TEXT,
+    transcript TEXT,
+    summary TEXT,
+    status TEXT DEFAULT 'processing',
+    error_message TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    user_id UUID REFERENCES auth.users NOT NULL
+);
 
-**Use your preferred IDE**
+-- Row Level Security
+ALTER TABLE public.meetings ENABLE ROW LEVEL SECURITY;
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+-- Policies
+CREATE POLICY "Users can view their own meetings"
+ON public.meetings FOR SELECT
+USING (auth.uid() = user_id);
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+CREATE POLICY "Users can create their own meetings"
+ON public.meetings FOR INSERT
+WITH CHECK (auth.uid() = user_id);
 
-Follow these steps:
+-- Action Items Tabelle
+CREATE TABLE IF NOT EXISTS public.action_items (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    meeting_id UUID REFERENCES public.meetings ON DELETE CASCADE,
+    text TEXT NOT NULL,
+    completed BOOLEAN DEFAULT FALSE,
+    assignee TEXT,
+    due_date TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+-- Row Level Security
+ALTER TABLE public.action_items ENABLE ROW LEVEL SECURITY;
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+-- Policies
+CREATE POLICY "Users can view action items of their meetings"
+ON public.action_items FOR SELECT
+USING (
+    EXISTS (
+        SELECT 1 FROM meetings
+        WHERE meetings.id = action_items.meeting_id
+        AND meetings.user_id = auth.uid()
+    )
+);
 
-# Step 3: Install the necessary dependencies.
-npm i
+CREATE POLICY "Users can create action items for their meetings"
+ON public.action_items FOR INSERT
+WITH CHECK (
+    EXISTS (
+        SELECT 1 FROM meetings
+        WHERE meetings.id = action_items.meeting_id
+        AND meetings.user_id = auth.uid()
+    )
+);
+```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+### 4. Anwendung starten
+```bash
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Features
+- Audio-Upload von Meetings
+- Automatische Transkription mit OpenAI Whisper
+- KI-gestützte Zusammenfassung mit GPT
+- Extraktion von Action Items
+- Echtzeit-Status-Updates
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Technischer Stack
+- React + TypeScript
+- Supabase für Backend und Authentifizierung
+- OpenAI API für Transkription und Analyse
+- TailwindCSS für Styling
 
-**Use GitHub Codespaces**
+## Fehlerbehandlung
+- Wenn kein OpenAI API-Key konfiguriert ist, zeigt die Anwendung eine entsprechende Fehlermeldung
+- Fehler bei der Verarbeitung werden im Meeting-Status angezeigt
+- Überprüfen Sie die Edge Function Logs in Supabase für detaillierte Fehlerinformationen
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/49e1a544-2d3c-4196-823c-bbd5e451341e) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
