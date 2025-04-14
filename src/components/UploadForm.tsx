@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Upload, Mic, FileAudio } from "lucide-react";
+import { Upload, Mic, FileAudio, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { createMeeting } from "@/services/meetingService";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 const formSchema = z.object({
   title: z.string().min(2, {
@@ -31,6 +32,7 @@ type FormData = z.infer<typeof formSchema>;
 const UploadForm = () => {
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -43,6 +45,7 @@ const UploadForm = () => {
 
   const onSubmit = async (data: FormData) => {
     if (!file) {
+      setError("Please select an audio file to upload.");
       toast({
         title: "No file selected",
         description: "Please select an audio file to upload.",
@@ -51,6 +54,7 @@ const UploadForm = () => {
       return;
     }
 
+    setError(null);
     setIsUploading(true);
     try {
       const meeting = await createMeeting({
@@ -65,10 +69,13 @@ const UploadForm = () => {
 
       // Navigate to the meeting details page
       navigate(`/meeting/${meeting.id}`);
-    } catch (error) {
+    } catch (err: any) {
+      console.error("Upload error:", err);
+      const errorMessage = err?.message || "There was an error uploading your meeting. Please try again.";
+      setError(errorMessage);
       toast({
         title: "Upload failed",
-        description: "There was an error uploading your meeting.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -79,8 +86,20 @@ const UploadForm = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
+      // Check file size (max 200MB)
+      if (selectedFile.size > 200 * 1024 * 1024) {
+        setError("File size exceeds 200MB limit. Please select a smaller file.");
+        toast({
+          title: "File too large",
+          description: "Maximum file size is 200MB. Please select a smaller file.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       setFile(selectedFile);
       form.setValue("file", selectedFile);
+      setError(null);
     }
   };
 
@@ -95,6 +114,14 @@ const UploadForm = () => {
                 Upload your audio recording to transcribe and generate a summary.
               </p>
             </div>
+
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
             <FormField
               control={form.control}
