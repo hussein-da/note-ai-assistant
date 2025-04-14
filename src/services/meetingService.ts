@@ -1,4 +1,3 @@
-
 import { Meeting, ActionItem, MeetingFormData } from '@/types/meeting';
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
@@ -113,6 +112,24 @@ export const createMeeting = async (meetingData: MeetingFormData): Promise<Meeti
       throw new Error('Kein Benutzer angemeldet');
     }
 
+    // Audio-Datei in den Storage hochladen
+    const audioFile = meetingData.file;
+    if (!audioFile) {
+      throw new Error('Keine Audio-Datei ausgewählt');
+    }
+
+    const fileName = `${userData.user.id}/${Date.now()}-${audioFile.name}`;
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('meetings')
+      .upload(fileName, audioFile);
+
+    if (uploadError) throw uploadError;
+
+    // Audio-URL generieren
+    const { data: { publicUrl: audioUrl } } = supabase.storage
+      .from('meetings')
+      .getPublicUrl(fileName);
+
     // Erstelle ein neues Meeting in der Datenbank
     const { data: newMeeting, error } = await supabase
       .from('meetings')
@@ -120,78 +137,28 @@ export const createMeeting = async (meetingData: MeetingFormData): Promise<Meeti
         title: meetingData.title,
         status: 'processing',
         user_id: userData.user.id,
-        // Weitere Felder werden mit Standardwerten gefüllt
+        audio_path: audioUrl,
       })
       .select()
       .single();
 
     if (error) throw error;
 
-    const meeting: Meeting = mapDbMeetingToMeeting(newMeeting);
+    const meeting = mapDbMeetingToMeeting(newMeeting);
 
-    // Simuliere die asynchrone Verarbeitung des Meetings
-    setTimeout(async () => {
-      // Nach einer Verzögerung das Meeting mit "fertiggestellten" Daten aktualisieren
-      const transcript = `
-      [Meeting-Transkript würde hier nach der Verarbeitung stehen]
-      Teilnehmer 1: Hallo zusammen, beginnen wir mit dem Meeting.
-      Teilnehmer 2: Ich habe am Projekt gearbeitet und möchte einige Updates teilen.
-      Teilnehmer 1: Sehr gut, bitte teile deine Erkenntnisse.
-      Teilnehmer 2: Wir haben die erste Phase abgeschlossen und gehen jetzt zur Implementierung über.
-      Teilnehmer 3: Ich habe eine Frage zum Zeitplan. Sind wir noch auf Kurs für die Veröffentlichung im Juni?
-      Teilnehmer 1: Ja, das sind wir. Aber wir müssen sicherstellen, dass das QA-Team vorbereitet ist.
-      Teilnehmer 4: Ich werde mit dem QA-Team koordinieren, um sicherzustellen, dass sie bis zum 15. Mai bereit sind.
-      Teilnehmer 1: Perfekt. Außerdem müssen wir die Dokumentation aktualisieren. Kann jemand das übernehmen?
-      Teilnehmer 2: Ich kann an der Dokumentation arbeiten. Ich werde sie bis Ende nächster Woche fertig haben.
-      Teilnehmer 1: Danke. Gibt es noch etwas, das wir besprechen müssen?
-      Teilnehmer 3: Ich denke, wir haben alles für den Moment besprochen.
-      Teilnehmer 1: Gut, dann treffen wir uns nächste Woche wieder. Vielen Dank an alle.
-      `;
-      
-      const summary = 'Das Team hat den Projektfortschritt besprochen und bestätigt, dass sie für die Veröffentlichung im Juni auf Kurs sind. Sie haben Verantwortlichkeiten für die QA-Vorbereitung und Dokumentationsaktualisierungen zugewiesen. Die erste Phase ist abgeschlossen und die Implementierung beginnt. Das nächste Meeting ist für nächste Woche geplant.';
-      
-      // Update des Meeting-Status und der Daten
-      const { error: updateError } = await supabase
-        .from('meetings')
-        .update({
-          status: 'completed',
-          transcript,
-          summary
-        })
-        .eq('id', meeting.id);
-      
-      if (updateError) {
-        console.error('Fehler beim Aktualisieren des Meetings:', updateError);
-        return;
-      }
-      
-      // Füge einige Action Items hinzu
-      const actionItems = [
-        {
-          meeting_id: meeting.id,
-          text: 'Koordination mit dem QA-Team für die Bereitschaft am 15. Mai',
-          assignee: 'Teilnehmer 4',
-          due_date: '2025-05-10',
-          completed: false
-        },
-        {
-          meeting_id: meeting.id,
-          text: 'Aktualisierung der Projektdokumentation',
-          assignee: 'Teilnehmer 2',
-          due_date: '2025-04-21',
-          completed: false
-        }
-      ];
-      
-      const { error: actionItemsError } = await supabase
-        .from('action_items')
-        .insert(actionItems);
-      
-      if (actionItemsError) {
-        console.error('Fehler beim Hinzufügen von Action Items:', actionItemsError);
-      }
-    }, 10000); // Simuliere 10 Sekunden Verarbeitungszeit
-    
+    // Starte die Verarbeitung mit der Edge-Funktion
+    fetch('/api/process-meeting', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({
+        meetingId: meeting.id,
+        audioUrl: meeting.audioUrl,
+      }),
+    }).catch(console.error); // Wir fangen Fehler hier ab, da dies asynchron läuft
+
     return meeting;
   } catch (error) {
     console.error('Fehler beim Erstellen des Meetings:', error);
