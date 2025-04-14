@@ -18,9 +18,6 @@ const mapDbMeetingToMeeting = (dbMeeting: any): Meeting => {
   };
 };
 
-// Helper function for delay (for simulation purposes only)
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
 // Fetch all meetings
 export const getMeetings = async (): Promise<Meeting[]> => {
   try {
@@ -128,22 +125,6 @@ export const createMeeting = async (meetingData: MeetingFormData): Promise<Meeti
     // Generate a unique filename
     const fileName = `${userData.user.id}/${Date.now()}-${audioFile.name}`;
     
-    // Check if storage bucket exists
-    const { data: buckets } = await supabase.storage.listBuckets();
-    const meetingsBucketExists = buckets?.some(bucket => bucket.name === 'meetings');
-    
-    if (!meetingsBucketExists) {
-      console.log('Creating meetings bucket');
-      const { error: createBucketError } = await supabase.storage.createBucket('meetings', {
-        public: true
-      });
-      
-      if (createBucketError) {
-        console.error('Error creating bucket:', createBucketError);
-        throw new Error('Failed to create storage bucket');
-      }
-    }
-
     // Upload audio file to storage
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('meetings')
@@ -151,15 +132,27 @@ export const createMeeting = async (meetingData: MeetingFormData): Promise<Meeti
 
     if (uploadError) {
       console.error('Error uploading file:', uploadError);
-      throw uploadError;
+      throw new Error(`Failed to upload audio file: ${uploadError.message}`);
     }
+
+    if (!uploadData) {
+      console.error('Upload returned no data');
+      throw new Error('Failed to upload audio file: No upload data returned');
+    }
+
+    console.log('File uploaded successfully, path:', uploadData.path);
 
     // Generate audio URL
     const { data: { publicUrl: audioUrl } } = supabase.storage
       .from('meetings')
       .getPublicUrl(fileName);
 
-    console.log('File uploaded successfully, URL:', audioUrl);
+    if (!audioUrl) {
+      console.error('Failed to generate public URL');
+      throw new Error('Failed to generate public URL for the audio file');
+    }
+
+    console.log('Public URL generated:', audioUrl);
 
     // Create a new meeting in the database
     const { data: newMeeting, error } = await supabase
@@ -176,7 +169,12 @@ export const createMeeting = async (meetingData: MeetingFormData): Promise<Meeti
 
     if (error) {
       console.error('Error creating meeting record:', error);
-      throw error;
+      throw new Error(`Failed to create meeting record: ${error.message}`);
+    }
+
+    if (!newMeeting) {
+      console.error('No meeting data returned');
+      throw new Error('Failed to create meeting record: No meeting data returned');
     }
 
     console.log('Meeting record created:', newMeeting.id);
@@ -184,7 +182,7 @@ export const createMeeting = async (meetingData: MeetingFormData): Promise<Meeti
 
     // Start processing with the Edge Function
     try {
-      const response = await fetch('/api/process-meeting', {
+      const response = await fetch('https://afthfaddlxvqdvrhnaiu.functions.supabase.co/process-meeting', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -197,8 +195,11 @@ export const createMeeting = async (meetingData: MeetingFormData): Promise<Meeti
       });
       
       if (!response.ok) {
-        console.warn('Process meeting API returned non-OK response:', response.status);
+        const errorText = await response.text();
+        console.warn('Process meeting API returned error:', response.status, errorText);
         // Don't throw here - we still want to return the meeting
+      } else {
+        console.log('Processing started successfully');
       }
     } catch (processingError) {
       console.error('Error calling process-meeting API:', processingError);

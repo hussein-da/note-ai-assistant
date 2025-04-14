@@ -50,95 +50,107 @@ serve(async (req) => {
 
     // 1. Download audio file from Supabase Storage
     console.log("Downloading audio file");
-    const response = await fetch(audioUrl);
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Failed to download audio file: ${response.status} ${errorText}`);
-      await updateMeetingStatus(meetingId, 'failed', `Failed to download audio file: ${response.status}`);
-      throw new Error('Failed to download audio file')
+    try {
+      const response = await fetch(audioUrl);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Failed to download audio file: ${response.status} ${errorText}`);
+        await updateMeetingStatus(meetingId, 'failed', `Failed to download audio file: ${response.status}`);
+        throw new Error('Failed to download audio file')
+      }
+      
+      const audioBlob = await response.blob();
+      console.log(`Audio file downloaded successfully: ${audioBlob.size} bytes`);
+      
+      if (audioBlob.size === 0) {
+        console.error("Downloaded audio file is empty");
+        await updateMeetingStatus(meetingId, 'failed', 'Audio file is empty');
+        throw new Error('Audio file is empty');
+      }
+
+      // 2. Transcribe audio with Whisper
+      console.log("Transcribing audio with Whisper API");
+      const formData = new FormData()
+      formData.append('file', audioBlob, 'audio.mp3')
+      formData.append('model', 'whisper-1')
+
+      const whisperResponse = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openaiKey}`,
+        },
+        body: formData,
+      });
+
+      if (!whisperResponse.ok) {
+        const errorData = await whisperResponse.text();
+        console.error(`Whisper API error: ${errorData}`);
+        await updateMeetingStatus(meetingId, 'failed', `Transcription failed: ${errorData}`);
+        throw new Error(`Whisper API error: ${errorData}`);
+      }
+
+      const whisperData = await whisperResponse.json();
+      const transcript = whisperData.text;
+      console.log("Transcription successful, length:", transcript.length);
+
+      // 3. Generate summary with GPT
+      console.log("Generating summary with GPT");
+      const summaryResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openaiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are an assistant that summarizes meetings. Create a clear, structured summary of the key points. Always provide the summary in English, regardless of the input language.'
+            },
+            {
+              role: 'user',
+              content: transcript
+            }
+          ],
+        }),
+      });
+
+      if (!summaryResponse.ok) {
+        const errorText = await summaryResponse.text();
+        console.error(`GPT API error: ${errorText}`);
+        await updateMeetingStatus(meetingId, 'failed', `Summarization failed: ${errorText}`);
+        throw new Error(`GPT API error: ${errorText}`);
+      }
+
+      const { choices } = await summaryResponse.json();
+      const summary = choices[0].message.content;
+      console.log("Summary generated successfully, length:", summary.length);
+
+      // 4. Update meeting in database
+      console.log("Updating meeting status to completed");
+      await updateMeetingStatus(meetingId, 'completed', null, transcript, summary);
+
+      return new Response(
+        JSON.stringify({ success: true }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } catch (downloadError) {
+      console.error("Error processing audio:", downloadError);
+      await updateMeetingStatus(meetingId, 'failed', `Error processing audio: ${downloadError.message}`);
+      throw downloadError;
     }
-    const audioBlob = await response.blob();
-    console.log(`Audio file downloaded: ${audioBlob.size} bytes`);
-
-    // 2. Transcribe audio with Whisper
-    console.log("Transcribing audio with Whisper API");
-    const formData = new FormData()
-    formData.append('file', audioBlob, 'audio.mp3')
-    formData.append('model', 'whisper-1')
-
-    const whisperResponse = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openaiKey}`,
-      },
-      body: formData,
-    })
-
-    if (!whisperResponse.ok) {
-      const error = await whisperResponse.text()
-      console.error(`Whisper API error: ${error}`);
-      await updateMeetingStatus(meetingId, 'failed', `Transcription failed: ${error}`)
-      throw new Error(`Whisper API error: ${error}`)
-    }
-
-    const whisperData = await whisperResponse.json();
-    const transcript = whisperData.text;
-    console.log("Transcription successful, length:", transcript.length);
-
-    // 3. Generate summary with GPT
-    console.log("Generating summary with GPT");
-    const summaryResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openaiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are an assistant that summarizes meetings. Create a clear, structured summary of the key points. Always provide the summary in English, regardless of the input language.'
-          },
-          {
-            role: 'user',
-            content: transcript
-          }
-        ],
-      }),
-    })
-
-    if (!summaryResponse.ok) {
-      const error = await summaryResponse.text()
-      console.error(`GPT API error: ${error}`);
-      await updateMeetingStatus(meetingId, 'failed', `Summarization failed: ${error}`)
-      throw new Error(`GPT API error: ${error}`)
-    }
-
-    const { choices } = await summaryResponse.json()
-    const summary = choices[0].message.content
-    console.log("Summary generated successfully, length:", summary.length);
-
-    // 4. Update meeting in database
-    console.log("Updating meeting status to completed");
-    await updateMeetingStatus(meetingId, 'completed', null, transcript, summary)
-
-    return new Response(
-      JSON.stringify({ success: true }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-
   } catch (error) {
-    console.error('Error processing meeting:', error)
+    console.error('Error processing meeting:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
-    )
+    );
   }
-})
+});
 
 // Helper function to update meeting status
 async function updateMeetingStatus(
